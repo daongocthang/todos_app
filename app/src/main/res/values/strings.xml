@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Todos</string>
+    <string name="no_data_found">Không tìm thấy dữ liệu</string>
+    <string name="todo">TODO</string>
+    <string name="save">Lưu</string>
+    <string name="delete">Xóa</string>
+    <string name="confirm_delete">Bạn thật muốn xóa dữ liệu không?</string>
+    <string name="content">Nội dung</string>
+
+</resources>
