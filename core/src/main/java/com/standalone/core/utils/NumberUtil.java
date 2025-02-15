@@ -1,4 +1,4 @@
-package com.standalone.core.adapter.utils;
+package com.standalone.core.utils;
 
 public class NumberUtil {
     public static int toInt(String value, int defaultValue) {

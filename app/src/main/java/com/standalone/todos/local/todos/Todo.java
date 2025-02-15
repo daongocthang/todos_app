@@ -2,22 +2,34 @@ package com.standalone.todos.local.todos;
 
 import com.standalone.core.dao.Column;
 import com.standalone.core.dao.Dao;
+import com.standalone.core.utils.DateUtil;
+
+import java.util.Date;
 
 public class Todo {
+    private static final String DATE_FORMAT = "YYYY-MM-DD HH:mm:ss";
+
     @Column(primary = true)
     private long id;
 
     @Column
-    private String content;
+    public long serverId;
 
     @Column
-    private boolean completed;
+    public String content;
+
+    @Column
+    public boolean completed;
+
+    @Column
+    public boolean isDeleted;
 
     @Column
     private String createdAt;
 
     @Column
     private String updatedAt;
+
 
     public Todo() {
         init();
@@ -34,33 +46,16 @@ public class Todo {
         this.updatedAt = Dao.getTimestamp();
     }
 
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-    public boolean isCompleted() {
-        return completed;
-    }
-
-    public void setCompleted(boolean completed) {
-        this.completed = completed;
-    }
-
     public long getId() {
         return id;
     }
 
-    public String getCreatedAt() {
-        return createdAt;
+    public Date createdAt() {
+        return DateUtil.parseTime(DATE_FORMAT, createdAt);
     }
 
-    public String getUpdatedAt() {
-        return updatedAt;
+    public Date updatedAt() {
+        return DateUtil.parseTime(DATE_FORMAT, updatedAt);
     }
-
 
 }

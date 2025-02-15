@@ -13,13 +13,11 @@ import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
-import com.standalone.core.adapter.utils.DialogUtil;
-import com.standalone.core.adapter.utils.InputValidator;
-import com.standalone.core.adapter.utils.ViewUtil;
+import com.standalone.core.utils.DialogUtil;
+import com.standalone.core.utils.InputValidator;
+import com.standalone.core.utils.ViewUtil;
 import com.standalone.core.ext.ApiService;
-import com.standalone.core.persistent.SetPreferences;
 import com.standalone.todos.databinding.DialogFormBinding;
 import com.standalone.todos.local.todos.Todo;
 import com.standalone.todos.local.todos.TodoAdapter;

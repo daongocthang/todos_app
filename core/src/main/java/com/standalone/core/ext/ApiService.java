@@ -4,7 +4,7 @@ import androidx.annotation.NonNull;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.standalone.core.App;
-import com.standalone.core.adapter.utils.Json;
+import com.standalone.core.utils.Json;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
@@ -24,7 +24,6 @@ public class ApiService<T> {
     public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
     private final OkHttpClient client;
-    private Callback callback;
 
     public ApiService() {
         this.client = new OkHttpClient.Builder()
@@ -33,18 +32,17 @@ public class ApiService<T> {
     }
 
     public ApiService<T> set(Callback callback) {
-        this.callback = callback;
         return this;
     }
 
-    public void insert(T t) throws JsonProcessingException {
+    public CompletableFuture<Response> insert(T t) throws JsonProcessingException {
+
         RequestBody body = RequestBody.create(Json.stringify(t), JSON);
         Request request = new Request.Builder()
                 .url(BASE_URL)
                 .post(body)
                 .build();
 
-        assert callback != null;
         client.newCall(request).enqueue(callback);
     }
 

@@ -2,7 +2,7 @@ package com.standalone.core;
 
 import static org.junit.Assert.assertTrue;
 
-import com.standalone.core.adapter.utils.EncUtil;
+import com.standalone.core.utils.EncUtil;
 
 import org.junit.Test;
 

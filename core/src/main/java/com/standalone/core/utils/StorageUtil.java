@@ -1,4 +1,4 @@
-package com.standalone.core.adapter.utils;
+package com.standalone.core.utils;
 
 import android.Manifest;
 import android.app.Activity;

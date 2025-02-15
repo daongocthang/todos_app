@@ -1,4 +1,4 @@
-package com.standalone.core.adapter.utils;
+package com.standalone.core.utils;
 
 import java.util.Arrays;
 
@@ -7,8 +7,22 @@ public class StrUtil {
         return s == null || s.isBlank();
     }
 
+    public static String camelToSnake(String s) {
+        StringBuilder builder = new StringBuilder();
+        builder.append(Character.toLowerCase(s.charAt(0)));
+        for (int i = 1; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (Character.isUpperCase(c)) {
+                builder.append("_").append(Character.toLowerCase(c));
+            } else {
+                builder.append(c);
+            }
+        }
+        return builder.toString();
+    }
+
     public static String pluralize(String s) {
-        String t=s.toLowerCase();
+        String t = s.toLowerCase();
 
         if (t.equals("child")) return "children";
         if (t.equals("man")) return "men";
@@ -41,6 +55,5 @@ public class StrUtil {
             return s + "zes";
 
         return s + "s";
-
     }
 }

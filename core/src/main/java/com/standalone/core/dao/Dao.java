@@ -5,8 +5,8 @@ import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 
-import com.standalone.core.adapter.utils.DateUtil;
-import com.standalone.core.adapter.utils.StrUtil;
+import com.standalone.core.utils.DateUtil;
+import com.standalone.core.utils.StrUtil;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
@@ -101,7 +101,7 @@ public class Dao<T> {
 
                 Object value = field.get(t);
                 Class<?> type = field.getType();
-                String fieldName = field.getName();
+                String fieldName = StrUtil.camelToSnake(field.getName());
                 if (value == null) return;
 
                 if (canAssign(type, int.class)) {
@@ -113,7 +113,7 @@ public class Dao<T> {
                 } else if (canAssign(type, boolean.class)) {
                     cv.put(fieldName, (boolean) value);
                 } else {
-                    if (fieldName.contains("updatedAt")) {
+                    if (fieldName.contains("updated_at")) {
                         value = getTimestamp();
                     }
                     cv.put(fieldName, value.toString());
@@ -132,7 +132,8 @@ public class Dao<T> {
                 public void onAccess(Field field, boolean primary) throws IllegalAccessException {
                     Object value = null;
                     Class<?> type = field.getType();
-                    int colIndex = cursor.getColumnIndex((primary ? "_" : "") + field.getName());
+                    String fieldName = StrUtil.camelToSnake(field.getName());
+                    int colIndex = cursor.getColumnIndex((primary ? "_" : "") + fieldName);
                     if (canAssign(type, int.class)) {
                         value = cursor.getInt(colIndex);
                     } else if (canAssign(type, long.class)) {
@@ -154,7 +155,7 @@ public class Dao<T> {
         }
     }
 
-    void accessDeclaredFields(FieldAccessor accessor) {
+    private void accessDeclaredFields(FieldAccessor accessor) {
         try {
             for (Field field : cls.getDeclaredFields()) {
                 Column column = field.getAnnotation(Column.class);
@@ -168,17 +169,18 @@ public class Dao<T> {
     }
 
 
-    boolean canAssign(Class<?> a, Class<?> b) {
+    private boolean canAssign(Class<?> a, Class<?> b) {
         return a.isAssignableFrom(b);
     }
 
-    void createTableIfNotExist() {
+    private void createTableIfNotExist() {
         List<String> cols = new ArrayList<>();
         accessDeclaredFields(new FieldAccessor() {
             @Override
             public void onAccess(Field field, boolean primary) throws IllegalAccessException {
                 StringBuilder builder = new StringBuilder();
-                builder.append(primary ? "_" : "").append(field.getName()).append(" ");
+                String fieldName = StrUtil.camelToSnake(field.getName());
+                builder.append(primary ? "_" : "").append(fieldName).append(" ");
                 Class<?> type = field.getType();
                 if (canAssign(type, int.class) || canAssign(type, long.class) || canAssign(type, boolean.class)) {
                     builder.append("INTEGER");

@@ -9,8 +9,8 @@ import android.os.Build;
 import android.util.Log;
 
 import com.standalone.core.App;
-import com.standalone.core.adapter.utils.NumberUtil;
-import com.standalone.core.adapter.utils.StorageUtil;
+import com.standalone.core.utils.NumberUtil;
+import com.standalone.core.utils.StorageUtil;
 
 import org.jetbrains.annotations.NotNull;
 

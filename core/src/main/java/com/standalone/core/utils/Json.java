@@ -1,4 +1,4 @@
-package com.standalone.core.adapter.utils;
+package com.standalone.core.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
