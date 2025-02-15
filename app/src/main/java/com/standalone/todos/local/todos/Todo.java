@@ -13,7 +13,7 @@ public class Todo {
     private long id;
 
     @Column
-    public long serverId;
+    public long serverId = -1;
 
     @Column
     public String content;

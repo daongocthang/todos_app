@@ -18,6 +18,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 public class ApiService<T> {
     public static final String BASE_URL = App.loadEnv().getProperty("BASE_URL");
@@ -35,15 +36,20 @@ public class ApiService<T> {
         return this;
     }
 
-    public CompletableFuture<Response> insert(T t) throws JsonProcessingException {
+    public CompletableFuture<Response> insert(T t){
+        ResponseFuture callback=new ResponseFuture();
+        try {
+            RequestBody body = RequestBody.create(Json.stringify(t), JSON);
+            Request request = new Request.Builder()
+                    .url(BASE_URL)
+                    .post(body)
+                    .build();
+            client.newCall(request).enqueue(callback);
+        } catch (JsonProcessingException e) {
+            callback.future.completeExceptionally(e);
+        }
 
-        RequestBody body = RequestBody.create(Json.stringify(t), JSON);
-        Request request = new Request.Builder()
-                .url(BASE_URL)
-                .post(body)
-                .build();
-
-        client.newCall(request).enqueue(callback);
+        return callback.future;
     }
 
     public Future<Response> fetchAll() {
@@ -60,29 +66,31 @@ public class ApiService<T> {
         return call(request);
     }
 
-    public void update(long id, T t) throws JsonProcessingException {
-        RequestBody body = RequestBody.create(Json.stringify(t), JSON);
-        Request request = new Request.Builder()
-                .url(BASE_URL + "/" + String.valueOf(id))
-                .put(body)
-                .build();
+    public CompletableFuture<Response> update(long id, T t){
+        ResponseFuture callback=new ResponseFuture();
+        try {
+            RequestBody body = RequestBody.create(Json.stringify(t), JSON);
+            Request request = new Request.Builder()
+                    .url(BASE_URL + "/" + String.valueOf(id))
+                    .put(body)
+                    .build();
+            client.newCall(request).enqueue(callback);
 
-        assert callback != null;
-        client.newCall(request).enqueue(callback);
+        } catch (JsonProcessingException e) {
+            callback.future.completeExceptionally(e);
+        }
+       return callback.future;
+
     }
 
-    public void delete(long id) {
+    public CompletableFuture<Response> delete(long id) {
         Request request = new Request.Builder()
                 .url(BASE_URL + "/" + String.valueOf(id))
                 .delete()
                 .build();
-        assert callback != null;
-        client.newCall(request).enqueue(callback);
+        return call(request);
     }
 
-    public static void raise(Throwable e) {
-        throw new RuntimeException(e);
-    }
 
     private CompletableFuture<Response> call(Request request) {
         ResponseFuture callback = new ResponseFuture();
