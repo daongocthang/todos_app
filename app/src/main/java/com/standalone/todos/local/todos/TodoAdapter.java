@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.standalone.core.adapter.AbsAdapter;
+import com.standalone.core.utils.DateUtil;
 import com.standalone.todos.databinding.ItemTodoBinding;
 
 import java.util.List;
@@ -99,8 +100,8 @@ public class TodoAdapter extends AbsAdapter<Todo, TodoAdapter.ViewHolder> {
         }
 
         public void bind(Todo todo, AppCompatActivity parent) {
-            itemBinding.tvContent.setText(todo.getContent());
-            itemBinding.tvUpdatedAt.setText(todo.getUpdatedAt());
+            itemBinding.tvContent.setText(todo.content);
+            itemBinding.tvUpdatedAt.setText(DateUtil.toString("DD-MM-YYYY HH:mm", todo.updatedAt()));
 
             itemBinding.getRoot().setOnClickListener(new View.OnClickListener() {
                 @Override

@@ -23,4 +23,9 @@ public class ExampleInstrumentedTest {
         Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
         assertEquals("com.standalone.todos", appContext.getPackageName());
     }
+
+    @Test
+    public void simpleTest(){
+        assertEquals(4,2+2);
+    }
 }

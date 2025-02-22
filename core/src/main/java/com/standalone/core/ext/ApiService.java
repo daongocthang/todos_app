@@ -7,9 +7,11 @@ import com.standalone.core.App;
 import com.standalone.core.utils.Json;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -36,8 +38,8 @@ public class ApiService<T> {
         return this;
     }
 
-    public CompletableFuture<Response> insert(T t){
-        ResponseFuture callback=new ResponseFuture();
+    public CompletableFuture<Response> insert(T t) {
+        ResponseFuture callback = new ResponseFuture();
         try {
             RequestBody body = RequestBody.create(Json.stringify(t), JSON);
             Request request = new Request.Builder()
@@ -52,22 +54,22 @@ public class ApiService<T> {
         return callback.future;
     }
 
-    public Future<Response> fetchAll() {
+    public CompletableFuture<Response> fetchAll() {
         Request request = new Request.Builder()
                 .url(BASE_URL)
                 .build();
         return call(request);
     }
 
-    public Future<Response> fetchById(long id) {
+    public CompletableFuture<Response> fetchById(long id) {
         Request request = new Request.Builder()
                 .url(BASE_URL + "/" + String.valueOf(id))
                 .build();
         return call(request);
     }
 
-    public CompletableFuture<Response> update(long id, T t){
-        ResponseFuture callback=new ResponseFuture();
+    public CompletableFuture<Response> update(long id, T t) {
+        ResponseFuture callback = new ResponseFuture();
         try {
             RequestBody body = RequestBody.create(Json.stringify(t), JSON);
             Request request = new Request.Builder()
@@ -79,7 +81,7 @@ public class ApiService<T> {
         } catch (JsonProcessingException e) {
             callback.future.completeExceptionally(e);
         }
-       return callback.future;
+        return callback.future;
 
     }
 
@@ -96,6 +98,12 @@ public class ApiService<T> {
         ResponseFuture callback = new ResponseFuture();
         client.newCall(request).enqueue(callback);
         return callback.future;
+    }
+
+    public static CompletableFuture<List<Response>> join(List<CompletableFuture<Response>> futures) {
+        CompletableFuture<Void> cfv = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+
+        return cfv.thenApply(__ -> futures.stream().map(CompletableFuture::join).collect(Collectors.toList()));
     }
 
     public static class ResponseFuture implements Callback {

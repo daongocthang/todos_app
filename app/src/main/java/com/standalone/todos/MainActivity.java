@@ -9,8 +9,17 @@ import androidx.work.NetworkType;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
 
+import com.standalone.core.ext.ApiService;
+import com.standalone.core.utils.Json;
 import com.standalone.todos.databinding.ActivityMainBinding;
+import com.standalone.todos.local.todos.Todo;
 import com.standalone.todos.local.todos.TodoAdapter;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+
+import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity {
     ActivityMainBinding binding;
@@ -33,8 +42,19 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        if (NetworkUtil.isNetworkAvailable(this))
-            syncInBackground();
+
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                syncInBackground();
+            }
+        }).start();
     }
 
     private void syncInBackground() {
@@ -45,6 +65,26 @@ public class MainActivity extends AppCompatActivity {
                 .setConstraints(constraints)
                 .build();
         WorkManager.getInstance(this).enqueue(serviceWorkRequest);
+    }
+
+    private void doInBackground() {
+        final ApiService<Todo> apiService = new ApiService<>();
+        if (NetworkUtil.isNetworkAvailable(this)) {
+            try {
+                Response res = apiService.fetchAll().get();
+                if (res.body() == null) {
+                    throw new IOException();
+                }
+
+                List<Todo> todoList = Json.parseList(res.body().string(), Todo.class);
+                todoList.forEach(t -> {
+                    System.out.println("Success: " + t.string());
+                });
+
+            } catch (ExecutionException | InterruptedException | IOException e) {
+                System.out.println("Failure: " + e.getMessage());
+            }
+        }
     }
 
 }

@@ -169,7 +169,7 @@ public class FormDialog extends BottomSheetDialogFragment implements Callback {
         activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                binding.edContent.setText(todo.getContent());
+                binding.edContent.setText(todo.content);
             }
         });
     }

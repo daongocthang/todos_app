@@ -24,7 +24,7 @@ public class Json {
     public static <T> List<T> parseList(String s, Class<T> cls) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
         CollectionType listType = mapper.getTypeFactory()
-                .constructCollectionType(ArrayList.class, cls);
+                .constructCollectionType(List.class, cls);
         return mapper.readValue(s, listType);
     }
 

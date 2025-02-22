@@ -21,6 +21,7 @@ public class ServiceWorker extends Worker {
 
             return Result.success();
         } catch (Exception e) {
+            System.out.println("ServiceWorkerException: " + e.getMessage());
             return Result.failure();
         }
     }

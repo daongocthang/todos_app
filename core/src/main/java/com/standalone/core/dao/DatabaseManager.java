@@ -22,10 +22,11 @@ import java.nio.channels.FileChannel;
 import java.util.Properties;
 
 public class DatabaseManager extends SQLiteOpenHelper {
-    static final String TAG = DatabaseManager.class.getSimpleName();
+
+    private static final String TAG = DatabaseManager.class.getSimpleName();
     @SuppressLint("StaticFieldLeak")
-    static DatabaseManager instance;
-    final Context context;
+    private static DatabaseManager instance;
+    private final Context context;
 
     DatabaseManager(Context context, String dbName, int version) {
         super(context, dbName, null, version);

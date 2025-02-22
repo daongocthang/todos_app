@@ -1,6 +1,9 @@
 package com.standalone.todos;
 
+import android.content.ContentValues;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.standalone.core.App;
 import com.standalone.core.ext.ApiService;
 import com.standalone.core.utils.Json;
 import com.standalone.todos.local.todos.Todo;
@@ -11,56 +14,94 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 
-import okhttp3.Callback;
 import okhttp3.Response;
 
 public class SyncManager {
+    public static final long SYNCED_LATENCY = Long.parseLong(App.loadEnv().getProperty("SYNCED_LATENCY"));
     private final TodoDao dao;
     private final ApiService<Todo> apiService;
-    private final List<CompletableFuture<Response>> futureList;
+    private final List<CompletableFuture<Response>> futures;
 
     public SyncManager() {
         this.dao = new TodoDao();
         this.apiService = new ApiService<>();
-        this.futureList = new ArrayList<>();
+        this.futures = new ArrayList<>();
     }
 
     public void startSync() throws IOException, ExecutionException, InterruptedException {
-        // syncing server data to local
-        futureList.clear();
+        // syncing remote data to local
+        futures.clear();
         for (Todo t : fetchDataFromServer()) {
             insertOrUpdate(t);
         }
-        join(futureList).thenAccept(list -> {
-            //TODO: then sync Local Data to Server
-        }).exceptionally(e -> {
-            throw new RuntimeException(e);
+
+        if (futures.size() == 0) {
+            syncToRemote();
+            return;
+        }
+
+        ApiService.join(futures).thenAccept(__ -> {
+            // sync data to remote
+            syncToRemote();
         });
     }
 
-
-    public void insertOrUpdate(Todo todo) {
-        Todo localData = dao.get(todo.serverId);
+    public void insertOrUpdate(Todo remoteData) {
+        Todo localData = dao.getByServerId(remoteData.getServerId());
+        long id;
         if (localData == null) {
-            dao.create(todo);
-        } else if (localData.isDeleted) {
-            CompletableFuture<Response> f = apiService.delete(localData.serverId);
-            futureList.add(f);
+            id = dao.create(remoteData);
         } else {
-            // Conflict resolution
-            resolveConflict(localData, todo);
+            id = localData.getId();
+            if (localData.isDeleted) {
+                dao.delete(localData.getId());
+                CompletableFuture<Response> f = apiService.delete(localData.getServerId());
+                futures.add(f);
+            } else {
+                // Conflict resolution
+                resolveConflict(localData, remoteData);
+            }
+        }
+        dao.notifySynced(id);
+    }
+
+    private void syncToRemote() {
+        for (Todo todo : dao.getAllUnsynced()) {
+            System.out.println(todo.string());
+            if (todo.isDeleted || todo.getServerId() > 0) {
+                dao.delete(todo.getId());
+            } else {
+                apiService.insert(todo).thenAccept(response -> {
+                    try {
+                        if (!response.isSuccessful() || response.body() == null) return;
+                        String s = response.body().string();
+                        Todo remoteData = Json.parse(s, Todo.class);
+                        ContentValues cv = new ContentValues();
+                        cv.put("server_id", remoteData.getServerId());
+                        dao.update(todo.getId(), cv);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }).join();
+            }
+
+            dao.notifySynced(todo.getId());
         }
     }
 
-    private void resolveConflict(Todo localData, Todo serverData) {
+    private void resolveConflict(Todo localData, Todo remoteData) {
         // Last updated wins
-        if (serverData.updatedAt().after(localData.updatedAt())) {
-            dao.update(localData.getId(), serverData);
-        } else if (serverData.updatedAt().before(localData.updatedAt())) {
-            CompletableFuture<Response> f = apiService.update(serverData.getId(), localData);
-            futureList.add(f);
+        if (remoteData.updatedAt().after(localData.updatedAt())) {
+            dao.update(localData.getId(), Todo.asContentValues(remoteData));
+        } else if (remoteData.updatedAt().before(localData.updatedAt())) {
+            try {
+                System.out.println(Json.stringify(localData));
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+            CompletableFuture<Response> f = apiService.update(remoteData.getServerId(), localData);
+            futures.add(f);
         }
     }
 
@@ -69,11 +110,5 @@ public class SyncManager {
         if (response.body() == null) throw new IOException();
 
         return Json.parseList(response.body().string(), Todo.class);
-    }
-
-    public static CompletableFuture<List<Response>> join(List<CompletableFuture<Response>> futures) {
-        CompletableFuture<Void> cfv = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
-
-        return cfv.thenApply(__ -> futures.stream().map(CompletableFuture::join).collect(Collectors.toList()));
     }
 }

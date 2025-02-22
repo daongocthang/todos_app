@@ -11,22 +11,24 @@ import com.standalone.core.utils.StrUtil;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class Dao<T> {
+    public static final String DATE_FORMAT = "YYYY-MM-DD HH:mm:ss";
     protected final String tableName;
     protected final SQLiteDatabase db;
     final Class<T> cls;
 
     public static String getTimestamp() {
-        return DateUtil.toString("MM-dd-yyyy HH:mm:ss", DateUtil.now());
+        return DateUtil.toString(DATE_FORMAT, DateUtil.now());
     }
 
     public static <T> Dao<T> of(Class<T> cls) {
         return new Dao<>(cls);
     }
 
-    Dao(Class<T> cls) {
+    private Dao(Class<T> cls) {
         this.cls = cls;
         this.db = DatabaseManager.getInstance().getDb();
         tableName = StrUtil.pluralize(cls.getSimpleName().toLowerCase());
@@ -44,43 +46,26 @@ public class Dao<T> {
         db.execSQL("DELETE FROM " + tableName);
     }
 
-    public void create(T t) {
-        db.insert(tableName, null, toValues(t));
+    public long create(T t) {
+        return db.insert(tableName, null, toValues(t));
     }
 
     public List<T> getAll() {
-        List<T> rows = new ArrayList<>();
-
         Cursor curs = db.rawQuery("SELECT * FROM " + tableName, null);
-        if (curs != null) {
-            if (curs.moveToFirst()) {
-                do {
-                    rows.add(getValues(curs));
-                } while (curs.moveToNext());
-            }
-
-            curs.close();
-        }
-
-        return rows;
+        return parseList(curs);
     }
 
     public T get(long id) {
-        T t = null;
-
         Cursor curs = db.rawQuery("SELECT * FROM " + tableName + " WHERE _id = ?", new String[]{String.valueOf(id)});
-        if (curs != null) {
-            if (curs.moveToFirst()) {
-                t = getValues(curs);
-            }
-            curs.close();
-        }
-
-        return t;
+        return parse(curs);
     }
 
     public void update(long id, T t) {
         db.update(tableName, toValues(t), "_id = ?", new String[]{String.valueOf(id)});
+    }
+
+    public void update(long id, ContentValues cv) {
+        db.update(tableName, cv, "_id = ?", new String[]{String.valueOf(id)});
     }
 
     public void delete(long id) {
@@ -91,6 +76,31 @@ public class Dao<T> {
         return DatabaseUtils.queryNumEntries(db, tableName);
     }
 
+    protected T parse(Cursor cursor) {
+        T t = null;
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                t = getValues(cursor);
+            }
+            cursor.close();
+        }
+        return t;
+    }
+
+    protected List<T> parseList(Cursor cursor) {
+        List<T> rows = new ArrayList<>();
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                do {
+                    rows.add(getValues(cursor));
+                } while (cursor.moveToNext());
+            }
+
+            cursor.close();
+        }
+
+        return rows;
+    }
 
     protected ContentValues toValues(T t) {
         ContentValues cv = new ContentValues();
@@ -200,6 +210,7 @@ public class Dao<T> {
             }
         });
 
+        Collections.sort(cols);
         String sql = String.format("CREATE TABLE IF NOT EXISTS %s(%s);", tableName, String.join(", ", cols));
         db.execSQL(sql);
     }
